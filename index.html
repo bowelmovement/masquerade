@@ -30,8 +30,6 @@
       left: 0;
     }
     .u-bluebg {
-      /* background: #0c66cc; */
-      /* background: rgb(12, 96, 210); */
       background: rgb(12, 102, 208);
     }
     .header {
@@ -82,7 +80,6 @@
   </video>
   <canvas class="screenBack" id="elScreenBack"></canvas>
   <canvas class="screen" id="elScreen"></canvas>
-
   <div class="devicebar u-bluebg"></div>
   <div class="header u-bluebg">
     <div class="header-time" id="elTime">
@@ -115,8 +112,7 @@
     })();
 
     let toggleColor = false;
-    const handleClick = () => { toggleColor = !toggleColor; };
-    document.body.addEventListener('touchend', handleClick);
+    document.body.addEventListener('touchend', () => toggleColor = !toggleColor);
 
     /* setupScreen */ (() => {
       const PIXEL_MULTIPLIER = 1;
@@ -135,8 +131,8 @@
       elScreenBack.width = elScreen.width = width;
       elScreenBack.height = elScreen.height = height;
 
-      const COLOR_REPLACEMENT_START_Y = ((((width * 140)  / PIXEL_MULTIPLIER) | 0) << 2);
-      const COLOR_REPLACEMENT_END_Y = ((((width * 494)  / PIXEL_MULTIPLIER) | 0) << 2);;
+      const COLOR_REPLACEMENT_START_Y = ((((width * 180)  / PIXEL_MULTIPLIER) | 0) << 2);
+      const COLOR_REPLACEMENT_END_Y = ((((width * 476)  / PIXEL_MULTIPLIER) | 0) << 2);;
 
       const isEqual = (a, b) => Math.abs(a - b) < 40;
       const isColor = (r, g, b, targetR, targetG, targetB) =>
