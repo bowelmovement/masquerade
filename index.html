@@ -71,6 +71,7 @@
       border: none;
       width: 60px;
       text-align: center;
+      text-transform: capitalize;
     }
   </style>
 </head>
@@ -86,13 +87,25 @@
       4:12:08PM 02/10/18
     </div>
   </div>
-  <input class="code" value="G2" />
+  <input class="code" id="elCode" value="g2" />
 
   <script>
     // Utils
     const pad = obj => (''+obj).padStart(2, "0");
 
-    /* setupTime */ (() => {
+    /* prevent over scroll */ (() => {
+      document.body.addEventListener('touchmove', e => e.preventDefault());
+    })();
+
+    /* setup code */ (() => {
+      const CODE_STORAGE_KEY = 'masquerade-code';
+      elCode.value = localStorage.getItem(CODE_STORAGE_KEY) || 'h2';
+      elCode.addEventListener('blur', () => {
+        localStorage.setItem(CODE_STORAGE_KEY, elCode.value);
+      })
+    })();
+
+    /* setup time */ (() => {
       const elTime = window.elTime;
       const updateTime = () => {
         const d = new Date();
@@ -111,10 +124,10 @@
       setInterval(updateTime, 1000);
     })();
 
-    let toggleColor = false;
-    document.body.addEventListener('touchend', () => toggleColor = !toggleColor);
+    /* setup screen */ (() => {
+      let toggleColor = false;
+      document.body.addEventListener('touchend', () => toggleColor = !toggleColor);
 
-    /* setupScreen */ (() => {
       const PIXEL_MULTIPLIER = 1;
       const COLOR_REPLACEMENTS = [
         [/* light blue */ [0, 84, 167], [228, 148, 37]],
