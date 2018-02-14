@@ -61,11 +61,10 @@
       letter-spacing: 0.5px;
     }
     .code {
-      /* opacity: 0; */
       font-size: 26px;
-      padding: 2px 0px;
+      padding: 1px 0px;
       position: absolute;
-      top: 553px;
+      top: 534px;
       right: 10px;
       background: #0d7cac;
       color: white;
@@ -116,10 +115,7 @@
     })();
 
     let toggleColor = false;
-    const handleClick = () => {
-      window.elScreenSource.play();
-      toggleColor = !toggleColor;
-    };
+    const handleClick = () => { toggleColor = !toggleColor; };
     document.body.addEventListener('touchend', handleClick);
 
     /* setupScreen */ (() => {
