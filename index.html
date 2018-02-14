@@ -120,8 +120,7 @@
       window.elScreenSource.play();
       toggleColor = !toggleColor;
     };
-    document.body.addEventListener('click', handleClick);
-    window.elScreenSource.addEventListener('click', handleClick);
+    document.body.addEventListener('touchend', handleClick);
 
     /* setupScreen */ (() => {
       const PIXEL_MULTIPLIER = 1;
