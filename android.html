@@ -110,11 +110,10 @@
 
     vec4 LIGHT_BLUE = vec4(8.0/255.0, 84.0/255.0, 167.0/255.0, 1.0);
     vec4 LIGHT_YELLOW = vec4(0.8941176470588236, 0.5803921568627451, 0.1450980392156863, 1.0);
-
     vec4 DARK_BLUE = vec4(9.0/255.0, 46.0/255.0,  82.0/255.0, 1.0);
     vec4 DARK_YELLOW = vec4(0.7333333333333333, 0.4588235294117647, 0.16470588235294117, 1.0);
 
-    vec4 new_color(vec4 color, vec4 match_color, vec4 replacement_color) {
+    vec4 replace_color(vec4 color, vec4 match_color, vec4 replacement_color) {
       vec4 absdiff = abs(match_color - color);
       bvec4 lessthans = lessThan(absdiff, TOLERANCE);
       return all(lessthans) ? replacement_color : color;
@@ -123,12 +122,9 @@
     void main() {
       vec4 color = texture2D(u_image, v_texCoord);
 
-      if(shouldColor == 1 && v_texCoord.t > 0.246 && v_texCoord.t < 0.6566) {
-        // Replace Light Blue
-        color = new_color(color, LIGHT_BLUE, LIGHT_YELLOW);
-
-        // Replace Dark Blue
-        color = new_color(color, DARK_BLUE, DARK_YELLOW);
+      if(shouldColor == 1 && v_texCoord.t > 0.215 && v_texCoord.t < 0.671) {
+        color = replace_color(color, LIGHT_BLUE, LIGHT_YELLOW);
+        color = replace_color(color, DARK_BLUE, DARK_YELLOW);
       }
       gl_FragColor = color;
     }
