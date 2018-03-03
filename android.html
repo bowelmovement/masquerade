@@ -11,20 +11,23 @@
   <style>
     html, body {
       font-family: sans-serif;
-      height: 100%;
+      width: 411px;
+      height: 731px;
       margin: 0;
       padding: 0;
       position: relative;
-      width: 100%;
       background: rgb(12, 102, 208);
     }
-    .screenBack, .screenSource {
+    body {
+      margin-top: -20px;
+    }
+    #elScreenSource {
       opacity: 0;
     }
-    .screen, .screenBack, .screenSource {
+    #elScreen, #elScreenSource {
       touch-action: none;
-      width: 100%;
-      height: 100%;
+      width: 411px;
+      height: 731px;
       position: absolute;
       top: 0;
       left: 0;
@@ -68,35 +71,79 @@
     }
     .code {
       font-size: 26px;
-      padding: 1px 0px;
       position: absolute;
-      bottom: 130px;
-      right: 16px;
+      bottom: 131px;
+      right: 17px;
       background: #0d7cac;
       color: white;
       border-radius: 4px;
       outline: none;
       border: none;
-      width: 60px;
+      width: 58px;
       text-align: center;
       text-transform: capitalize;
     }
   </style>
 </head>
 <body>
-  <video autoplay class="screenSource" id="elScreenSource" loop muted playsinline>
+  <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec2 a_position;
+    attribute vec2 a_texCoord;
+    uniform vec2 u_resolution;
+    varying vec2 v_texCoord;
+
+    void main() {
+      vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0; // convert the rectangle from pixels to clipspace
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+      v_texCoord = a_texCoord; // pass the texCoord to the fragment shader
+    }
+  </script>
+  <script id="fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform int shouldColor;
+    uniform sampler2D u_image;
+    varying vec2 v_texCoord;
+
+    float SCALAR_TOLERANCE = 0.165;
+    vec4 TOLERANCE = vec4(SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE);
+
+    vec4 LIGHT_BLUE = vec4(8.0/255.0, 84.0/255.0, 167.0/255.0, 1.0);
+    vec4 LIGHT_YELLOW = vec4(0.8941176470588236, 0.5803921568627451, 0.1450980392156863, 1.0);
+
+    vec4 DARK_BLUE = vec4(9.0/255.0, 46.0/255.0,  82.0/255.0, 1.0);
+    vec4 DARK_YELLOW = vec4(0.7333333333333333, 0.4588235294117647, 0.16470588235294117, 1.0);
+
+    vec4 new_color(vec4 color, vec4 match_color, vec4 replacement_color) {
+      vec4 absdiff = abs(match_color - color);
+      bvec4 lessthans = lessThan(absdiff, TOLERANCE);
+      return all(lessthans) ? replacement_color : color;
+    }
+
+    void main() {
+      vec4 color = texture2D(u_image, v_texCoord);
+
+      if(shouldColor == 1 && v_texCoord.t > 0.246 && v_texCoord.t < 0.6566) {
+        // Replace Light Blue
+        color = new_color(color, LIGHT_BLUE, LIGHT_YELLOW);
+
+        // Replace Dark Blue
+        color = new_color(color, DARK_BLUE, DARK_YELLOW);
+      }
+      gl_FragColor = color;
+    }
+  </script>
+
+  <video autoplay id="elScreenSource" loop muted playsinline>
     <source src="screen-android.mp4" />
   </video>
-  <canvas class="screenBack" id="elScreenBack"></canvas>
-  <canvas class="screen" id="elScreen"></canvas>
+  <canvas id="elScreen"></canvas>
   <div class="devicebar u-bluebg"></div>
   <div class="record-button-blocker u-bluebg"></div>
   <div class="header u-bluebg">
-    <div class="header-time" id="elTime">
-      4:12:08PM 02/10/18
-    </div>
+    <div class="header-time" id="elTime"></div>
   </div>
-  <input class="code" id="elCode" value="g2" />
+  <div class="code">g2</div>
 
   <script>
     // Utils
@@ -104,14 +151,6 @@
 
     /* prevent over scroll */ (() => {
       document.body.addEventListener('touchmove', e => e.preventDefault());
-    })();
-
-    /* setup code */ (() => {
-      const CODE_STORAGE_KEY = 'masquerade-code';
-      elCode.value = localStorage.getItem(CODE_STORAGE_KEY) || 'h2';
-      elCode.addEventListener('blur', () => {
-        localStorage.setItem(CODE_STORAGE_KEY, elCode.value);
-      })
     })();
 
     /* setup time */ (() => {
@@ -134,69 +173,101 @@
     })();
 
     /* setup screen */ (() => {
-      let toggleColor = false;
-      let fullscreen = false;
-      document.body.addEventListener('click', () => {
-        // if (!fullscreen) {
-          fullscreen = true;
-          document.body.webkitRequestFullscreen();
-        // }
-      });
-      document.body.addEventListener('touchend', () => {
-        toggleColor = !toggleColor;
-      });
+      let shouldColor = false;
+      document.body.addEventListener('touchend', () => shouldColor = !shouldColor);
 
-      const PIXEL_MULTIPLIER = 1;
-      const COLOR_REPLACEMENTS = [
-        [/* light blue */ [0, 84, 167], [228, 148, 37]],
-        [/* dark blue */  [9, 46,  82], [187, 117, 42]]
-      ];
-      const elScreenSource = window.elScreenSource;
-      const elScreen = window.elScreen;
-      const elScreenBack = window.elScreenBack;
-      const context = elScreen.getContext('2d');
-      const contextBack = elScreenBack.getContext('2d');
-
-      const width = (elScreen.clientWidth / PIXEL_MULTIPLIER) | 0;
-      const height = (elScreen.clientHeight / PIXEL_MULTIPLIER) | 0;
-      elScreenBack.width = elScreen.width = width;
-      elScreenBack.height = elScreen.height = height;
-
-      const COLOR_REPLACEMENT_START_Y = ((((width * 180)  / PIXEL_MULTIPLIER) | 0) << 2);
-      const COLOR_REPLACEMENT_END_Y = ((((width * 476)  / PIXEL_MULTIPLIER) | 0) << 2);;
-
-      const isEqual = (a, b) => Math.abs(a - b) < 40;
-      const isColor = (r, g, b, targetR, targetG, targetB) =>
-        isEqual(r, targetR) && isEqual(g, targetG) && isEqual(b, targetB);
-
-      const replaceColors = (data, i, replacementMap) => {
-        for(const [target, replace] of replacementMap) {
-          if (isColor(data[i], data[i+1], data[i+2], target[0], target[1], target[2])) {
-            data[i] = replace[0];
-            data[i+1] = replace[1];
-            data[i+2] = replace[2];
-            return;
-          }
-        }
-      }
-
-      const getPixels = () => {
-        contextBack.drawImage(elScreenSource, 0, 0, width, height);
-        const imageData = contextBack.getImageData(0, 0, width, height);
-        const data = imageData.data;
-        for(let i = COLOR_REPLACEMENT_START_Y; i < COLOR_REPLACEMENT_END_Y; i+=4) {
-          replaceColors(data, i, COLOR_REPLACEMENTS);
-        }
-        return imageData;
-      }
-
-      const draw = () => {
-        if (toggleColor) context.putImageData(getPixels(), 0, 0);
-        else context.drawImage(elScreenSource, 0, 0, width, height);
-        requestAnimationFrame(draw);
+      const compileShader = (ctx, shaderSource, shaderType) => {
+        const shader = ctx.createShader(shaderType);
+        ctx.shaderSource(shader, shaderSource);
+        ctx.compileShader(shader);
+        return shader;
       };
 
-      draw();
+      // Helper function to compile webGL program
+      const createWebGLProgram = (ctx, vertexShaderSource, fragmentShaderSource) => {
+        const program = ctx.createProgram();
+        ctx.attachShader(program, compileShader(ctx, vertexShaderSource, ctx.VERTEX_SHADER));
+        ctx.attachShader(program, compileShader(ctx, fragmentShaderSource, ctx.FRAGMENT_SHADER));
+        ctx.linkProgram(program);
+        ctx.useProgram(program);
+        return program;
+      }
+
+      const setupVideo = (image) => {
+        const canvas = window.elScreen;
+        const width = image.clientWidth;
+        const height = image.clientHeight;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        const fragmentShaderSource = document.getElementById("fragment-shader").text;
+        const vertexShaderSource = document.getElementById("vertex-shader").text;
+        const program = createWebGLProgram(ctx, vertexShaderSource, fragmentShaderSource);
+
+        // Expose canvas width and height to shader via u_resolution
+        const resolutionLocation = ctx.getUniformLocation(program, "u_resolution");
+        ctx.uniform2f(resolutionLocation, width, height);
+
+        // Position rectangle vertices (2 triangles)
+        const positionLocation = ctx.getAttribLocation(program, "a_position");
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+        ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
+              0,      0,
+          width,      0,
+              0, height,
+              0, height,
+          width,      0,
+          width, height
+        ]), ctx.STATIC_DRAW);
+        ctx.enableVertexAttribArray(positionLocation);
+        ctx.vertexAttribPointer(positionLocation, 2, ctx.FLOAT, false, 0, 0);
+
+        //Position texture
+        const texCoordLocation = ctx.getAttribLocation(program, "a_texCoord");
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+        ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
+          0.0, 0.0,
+          1.0, 0.0,
+          0.0, 1.0,
+          0.0, 1.0,
+          1.0, 0.0,
+          1.0, 1.0
+        ]), ctx.STATIC_DRAW);
+        ctx.enableVertexAttribArray(texCoordLocation);
+        ctx.vertexAttribPointer(texCoordLocation, 2, ctx.FLOAT, false, 0, 0);
+
+        // color flag
+        const shouldColorLocation = ctx.getUniformLocation(program, "shouldColor");
+        ctx.uniform1i(shouldColorLocation, 0);
+
+        // Create a texture.
+        ctx.bindTexture(ctx.TEXTURE_2D, ctx.createTexture());
+
+        // Set the parameters so we can render any size image.
+        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+        return { ctx, shouldColorLocation };
+      }
+
+      let hasSetup = false;
+      window.elScreenSource.addEventListener('playing', () => {
+        if (!hasSetup) {
+          hasSetup = true;
+          const video = window.elScreenSource;
+          const { ctx, shouldColorLocation } = setupVideo(video);
+          const drawFrame = () => {
+            ctx.uniform1i(shouldColorLocation, shouldColor ? 1 : 0);
+            ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, video);
+            ctx.drawArrays(ctx.TRIANGLES, 0, 6);
+            requestAnimationFrame(drawFrame);
+          }
+          drawFrame();
+        }
+      });
     })();
   </script>
 </body>
