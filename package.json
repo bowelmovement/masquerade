@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "reload -d ."
+    "reload": "reload -d .",
+    "serve": "serve ."
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "reload": "^2.2.2"
+    "reload": "^2.2.2",
+    "serve": "^6.5.1"
   }
 }
