@@ -1,4 +1,4 @@
-const CACHE_VERSION = 8;
+const CACHE_VERSION = 16;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './android.html',
@@ -27,7 +27,7 @@ self.addEventListener('activate', event => {
   })());
 });
 
-self.addEventListener('fetch', function(event) {
+self.addEventListener('fetch', event => {
   const { request, request: { headers, url } } = event;
   console.log('Handling fetch event for', url);
 
@@ -38,8 +38,7 @@ self.addEventListener('fetch', function(event) {
 
     event.respondWith((async () => {
       const cache = await caches.open(CURRENT_CACHES.prefetch);
-      const res = await cache.match(url);
-      const ab = await (res ? res : await fetch(request)).arrayBuffer();
+      const ab = await ((await cache.match(url)) || (await fetch(request))).arrayBuffer();
       return new Response(
         ab.slice(pos),
         {
@@ -53,22 +52,8 @@ self.addEventListener('fetch', function(event) {
     })());
   } else {
     console.log('Non-range request for', url);
-    event.respondWith((async () => {
-      const cachedResponse = await caches.match(request);
-      if (cachedResponse) {
-        console.log('Found response in cache:', cachedResponse);
-        return cachedResponse;
-      }
-      console.log('No response found in cache. About to fetch from network...');
-
-      try {
-        const response = await fetch(request);
-        console.log('Response from network is:', response);
-        return response;
-      } catch (error) {
-        console.error('Fetching failed:', error);
-        throw error;
-      }
-    })());
+    event.respondWith((async () =>
+      (await caches.match(request)) || (await fetch(request))
+    )());
   }
 });
