@@ -142,129 +142,157 @@
   <div class="code">g2</div>
 
   <script>
-    // Utils
-    const pad = obj => (''+obj).padStart(2, "0");
-
-    /* prevent over scroll */ (() => {
-      document.body.addEventListener('touchmove', e => e.preventDefault());
-    })();
-
-    /* setup time */ (() => {
-      const elTime = window.elTime;
-      const updateTime = () => {
-        const d = new Date();
-        let hours = d.getHours();
-        let amPm = "AM";
-        if (hours > 12) {
-          amPm = "PM";
-          hours -= 12;
-        }
-        const timeString = `${hours}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${amPm}`;
-        const dateString = `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear() - 2000}`;
-
-        elTime.textContent = `${timeString} ${dateString}`;
-      };
-      updateTime();
-      setInterval(updateTime, 1000);
-    })();
-
-    /* setup screen */ (() => {
-      let shouldColor = false;
-      document.body.addEventListener('touchend', () => shouldColor = !shouldColor);
-
-      const compileShader = (ctx, shaderSource, shaderType) => {
-        const shader = ctx.createShader(shaderType);
-        ctx.shaderSource(shader, shaderSource);
-        ctx.compileShader(shader);
-        return shader;
-      };
-
-      // Helper function to compile webGL program
-      const createWebGLProgram = (ctx, vertexShaderSource, fragmentShaderSource) => {
-        const program = ctx.createProgram();
-        ctx.attachShader(program, compileShader(ctx, vertexShaderSource, ctx.VERTEX_SHADER));
-        ctx.attachShader(program, compileShader(ctx, fragmentShaderSource, ctx.FRAGMENT_SHADER));
-        ctx.linkProgram(program);
-        ctx.useProgram(program);
-        return program;
-      }
-
-      const setupVideo = (image) => {
-        const canvas = window.elScreen;
-        const width = image.clientWidth;
-        const height = image.clientHeight;
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-        const fragmentShaderSource = document.getElementById("fragment-shader").text;
-        const vertexShaderSource = document.getElementById("vertex-shader").text;
-        const program = createWebGLProgram(ctx, vertexShaderSource, fragmentShaderSource);
-
-        // Expose canvas width and height to shader via u_resolution
-        const resolutionLocation = ctx.getUniformLocation(program, "u_resolution");
-        ctx.uniform2f(resolutionLocation, width, height);
-
-        // Position rectangle vertices (2 triangles)
-        const positionLocation = ctx.getAttribLocation(program, "a_position");
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
-        ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
-              0,      0,
-          width,      0,
-              0, height,
-              0, height,
-          width,      0,
-          width, height
-        ]), ctx.STATIC_DRAW);
-        ctx.enableVertexAttribArray(positionLocation);
-        ctx.vertexAttribPointer(positionLocation, 2, ctx.FLOAT, false, 0, 0);
-
-        //Position texture
-        const texCoordLocation = ctx.getAttribLocation(program, "a_texCoord");
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
-        ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
-          0.0, 0.0,
-          1.0, 0.0,
-          0.0, 1.0,
-          0.0, 1.0,
-          1.0, 0.0,
-          1.0, 1.0
-        ]), ctx.STATIC_DRAW);
-        ctx.enableVertexAttribArray(texCoordLocation);
-        ctx.vertexAttribPointer(texCoordLocation, 2, ctx.FLOAT, false, 0, 0);
-
-        // color flag
-        const shouldColorLocation = ctx.getUniformLocation(program, "shouldColor");
-        ctx.uniform1i(shouldColorLocation, 0);
-
-        // Create a texture.
-        ctx.bindTexture(ctx.TEXTURE_2D, ctx.createTexture());
-
-        // Set the parameters so we can render any size image.
-        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
-        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
-        ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
-        return { ctx, shouldColorLocation };
-      }
-
-      let hasSetup = false;
-      window.elScreenSource.addEventListener('playing', () => {
-        if (!hasSetup) {
-          hasSetup = true;
-          const video = window.elScreenSource;
-          const { ctx, shouldColorLocation } = setupVideo(video);
-          const drawFrame = () => {
-            ctx.uniform1i(shouldColorLocation, shouldColor ? 1 : 0);
-            ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, video);
-            ctx.drawArrays(ctx.TRIANGLES, 0, 6);
-            requestAnimationFrame(drawFrame);
-          }
-          drawFrame();
+    // Helper function which returns a promise which resolves once the service worker registration
+    // is past the "installing" state.
+    function waitUntilInstalled(registration) {
+      return new Promise(function(resolve, reject) {
+        if (registration.installing) {
+          // If the current registration represents the "installing" service worker, then wait
+          // until the installation step (during which the resources are pre-fetched) completes
+          // to display the file list.
+          registration.installing.addEventListener('statechange', function(e) {
+            if (e.target.state === 'installed') {
+              resolve();
+            } else if (e.target.state === 'redundant') {
+              reject();
+            }
+          });
+        } else {
+          // Otherwise, if this isn't the "installing" service worker, then installation must have been
+          // completed during a previous visit to this page, and the resources are already pre-fetched.
+          // So we can show the list of files right away.
+          resolve();
         }
       });
-    })();
+    }
+
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+    .then(waitUntilInstalled)
+    .then(() => {
+      // Utils
+      const pad = obj => (''+obj).padStart(2, "0");
+
+      /* prevent over scroll */ (() => {
+        document.body.addEventListener('touchmove', e => e.preventDefault());
+      })();
+
+      /* setup time */ (() => {
+        const elTime = window.elTime;
+        const updateTime = () => {
+          const d = new Date();
+          let hours = d.getHours();
+          let amPm = "AM";
+          if (hours > 12) {
+            amPm = "PM";
+            hours -= 12;
+          }
+          const timeString = `${hours}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${amPm}`;
+          const dateString = `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear() - 2000}`;
+
+          elTime.textContent = `${timeString} ${dateString}`;
+        };
+        updateTime();
+        setInterval(updateTime, 1000);
+      })();
+
+      /* setup screen */ (() => {
+        let shouldColor = false;
+        document.body.addEventListener('touchend', () => shouldColor = !shouldColor);
+
+        const compileShader = (ctx, shaderSource, shaderType) => {
+          const shader = ctx.createShader(shaderType);
+          ctx.shaderSource(shader, shaderSource);
+          ctx.compileShader(shader);
+          return shader;
+        };
+
+        // Helper function to compile webGL program
+        const createWebGLProgram = (ctx, vertexShaderSource, fragmentShaderSource) => {
+          const program = ctx.createProgram();
+          ctx.attachShader(program, compileShader(ctx, vertexShaderSource, ctx.VERTEX_SHADER));
+          ctx.attachShader(program, compileShader(ctx, fragmentShaderSource, ctx.FRAGMENT_SHADER));
+          ctx.linkProgram(program);
+          ctx.useProgram(program);
+          return program;
+        }
+
+        const setupVideo = (image) => {
+          const canvas = window.elScreen;
+          const width = image.clientWidth;
+          const height = image.clientHeight;
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+          const fragmentShaderSource = document.getElementById("fragment-shader").text;
+          const vertexShaderSource = document.getElementById("vertex-shader").text;
+          const program = createWebGLProgram(ctx, vertexShaderSource, fragmentShaderSource);
+
+          // Expose canvas width and height to shader via u_resolution
+          const resolutionLocation = ctx.getUniformLocation(program, "u_resolution");
+          ctx.uniform2f(resolutionLocation, width, height);
+
+          // Position rectangle vertices (2 triangles)
+          const positionLocation = ctx.getAttribLocation(program, "a_position");
+          ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+          ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
+                0,      0,
+            width,      0,
+                0, height,
+                0, height,
+            width,      0,
+            width, height
+          ]), ctx.STATIC_DRAW);
+          ctx.enableVertexAttribArray(positionLocation);
+          ctx.vertexAttribPointer(positionLocation, 2, ctx.FLOAT, false, 0, 0);
+
+          //Position texture
+          const texCoordLocation = ctx.getAttribLocation(program, "a_texCoord");
+          ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+          ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([
+            0.0, 0.0,
+            1.0, 0.0,
+            0.0, 1.0,
+            0.0, 1.0,
+            1.0, 0.0,
+            1.0, 1.0
+          ]), ctx.STATIC_DRAW);
+          ctx.enableVertexAttribArray(texCoordLocation);
+          ctx.vertexAttribPointer(texCoordLocation, 2, ctx.FLOAT, false, 0, 0);
+
+          // color flag
+          const shouldColorLocation = ctx.getUniformLocation(program, "shouldColor");
+          ctx.uniform1i(shouldColorLocation, 0);
+
+          // Create a texture.
+          ctx.bindTexture(ctx.TEXTURE_2D, ctx.createTexture());
+
+          // Set the parameters so we can render any size image.
+          ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+          ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+          ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+          ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+          return { ctx, shouldColorLocation };
+        }
+
+        let hasSetup = false;
+        window.elScreenSource.addEventListener('playing', () => {
+          if (!hasSetup) {
+            hasSetup = true;
+            const video = window.elScreenSource;
+            const { ctx, shouldColorLocation } = setupVideo(video);
+            const drawFrame = () => {
+              ctx.uniform1i(shouldColorLocation, shouldColor ? 1 : 0);
+              ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, video);
+              ctx.drawArrays(ctx.TRIANGLES, 0, 6);
+              requestAnimationFrame(drawFrame);
+            }
+            drawFrame();
+          }
+        });
+      })();
+    });
   </script>
 </body>
 </html>
