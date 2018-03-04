@@ -101,31 +101,33 @@
   <script id="fragment-shader" type="x-shader/x-fragment">
     precision mediump float;
 
-    uniform int shouldColor;
+    uniform float shouldColor;
     uniform sampler2D u_image;
     varying vec2 v_texCoord;
 
-    float SCALAR_TOLERANCE = 0.165;
-    vec4 TOLERANCE = vec4(SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE);
+    const float SCALAR_TOLERANCE = 0.165;
+    const vec4 TOLERANCE = vec4(SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE);
 
-    vec4 LIGHT_BLUE = vec4(8.0/255.0, 84.0/255.0, 167.0/255.0, 1.0);
-    vec4 LIGHT_YELLOW = vec4(0.8941176470588236, 0.5803921568627451, 0.1450980392156863, 1.0);
-    vec4 DARK_BLUE = vec4(9.0/255.0, 46.0/255.0,  82.0/255.0, 1.0);
-    vec4 DARK_YELLOW = vec4(0.7333333333333333, 0.4588235294117647, 0.16470588235294117, 1.0);
+    const vec4 LIGHT_BLUE = vec4(8.0/255.0, 84.0/255.0, 167.0/255.0, 1.0);
+    const vec4 LIGHT_YELLOW = vec4(0.8941176470588236, 0.5803921568627451, 0.1450980392156863, 1.0);
+    const vec4 DARK_BLUE = vec4(9.0/255.0, 46.0/255.0,  82.0/255.0, 1.0);
+    const vec4 DARK_YELLOW = vec4(0.7333333333333333, 0.4588235294117647, 0.16470588235294117, 1.0);
 
-    vec4 replace_color(vec4 color, vec4 match_color, vec4 replacement_color) {
-      vec4 absdiff = abs(match_color - color);
-      bvec4 lessthans = lessThan(absdiff, TOLERANCE);
-      return all(lessthans) ? replacement_color : color;
+    vec4 replaceColor(vec4 color, vec4 matchColor, vec4 replacementColor) {
+      vec4 colorDiff = abs(matchColor - color);
+      float doReplace = float(all(lessThan(colorDiff, TOLERANCE)));
+      return doReplace * replacementColor + (1.0 - doReplace) * color;
+    }
+
+    float isBetween(float v, float min, float max) {
+      return sign(sign(v - min) + sign(max - v));
     }
 
     void main() {
       vec4 color = texture2D(u_image, v_texCoord);
-
-      if(shouldColor == 1 && v_texCoord.t > 0.215 && v_texCoord.t < 0.671) {
-        color = replace_color(color, LIGHT_BLUE, LIGHT_YELLOW);
-        color = replace_color(color, DARK_BLUE, DARK_YELLOW);
-      }
+      float isReplaceablePixel = isBetween(v_texCoord.t, 0.215, 0.671);
+      color = replaceColor(color, (isReplaceablePixel * shouldColor * LIGHT_BLUE), LIGHT_YELLOW);
+      color = replaceColor(color, (isReplaceablePixel * shouldColor * DARK_BLUE), DARK_YELLOW);
       gl_FragColor = color;
     }
   </script>
@@ -263,7 +265,7 @@
 
           // color flag
           const shouldColorLocation = ctx.getUniformLocation(program, "shouldColor");
-          ctx.uniform1i(shouldColorLocation, 0);
+          ctx.uniform1f(shouldColorLocation, 0.0);
 
           // Create a texture.
           ctx.bindTexture(ctx.TEXTURE_2D, ctx.createTexture());
@@ -283,7 +285,7 @@
             const video = window.elScreenSource;
             const { ctx, shouldColorLocation } = setupVideo(video);
             const drawFrame = () => {
-              ctx.uniform1i(shouldColorLocation, shouldColor ? 1 : 0);
+              ctx.uniform1f(shouldColorLocation, shouldColor ? 1.0 : 0.0);
               ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, video);
               ctx.drawArrays(ctx.TRIANGLES, 0, 6);
               requestAnimationFrame(drawFrame);
