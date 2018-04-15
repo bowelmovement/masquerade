@@ -1,4 +1,4 @@
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 13;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './index.html',
@@ -33,19 +33,25 @@ self.addEventListener('fetch', event => {
 
   const range = headers.get('range');
   if (range) {
-    const pos = Number(/^bytes\=(\d+)\-$/g.exec(range)[1]);
-    console.log(`Range request for ${url}, starting position: ${pos}`);
+    let [_, pos, posEnd] = /^bytes\=(\d+)\-(\d+)/g.exec(range);
+    pos = +pos;
+    posEnd = +posEnd;
+    if (pos >= posEnd) return;
+    console.log(`Range request for ${url}, starting position: ${pos}, ending position: ${posEnd}`);
 
     event.respondWith((async () => {
       const cache = await caches.open(CURRENT_CACHES.prefetch);
       const ab = await ((await cache.match(url)) || (await fetch(request))).arrayBuffer();
       return new Response(
-        ab.slice(pos),
+        ab.slice(pos, posEnd),
         {
           status: 206,
           statusText: 'Partial Content',
           headers: [
-            ['Content-Range', `bytes ${pos}-${ab.byteLength - 1}/${ab.byteLength}`]
+            ['Content-Type', 'video/mp4'],
+            ['Content-Length', `${(posEnd - pos + 1)}`],
+            ['Content-Range', `bytes ${pos}-${posEnd}/${ab.byteLength}`],
+            ['Accept-Ranges', 'bytes']
           ]
         }
       );
