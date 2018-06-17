@@ -105,13 +105,18 @@
     uniform sampler2D u_image;
     varying vec2 v_texCoord;
 
-    const float SCALAR_TOLERANCE = 0.165;
+    const float SCALAR_TOLERANCE = 0.13;
     const vec4 TOLERANCE = vec4(SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE, SCALAR_TOLERANCE);
 
-    const vec4 LIGHT_BLUE = vec4(8.0/255.0, 84.0/255.0, 167.0/255.0, 1.0);
-    const vec4 LIGHT_YELLOW = vec4(0.8941176470588236, 0.5803921568627451, 0.1450980392156863, 1.0);
-    const vec4 DARK_BLUE = vec4(9.0/255.0, 46.0/255.0,  82.0/255.0, 1.0);
-    const vec4 DARK_YELLOW = vec4(0.7333333333333333, 0.4588235294117647, 0.16470588235294117, 1.0);
+    const vec4 LIGHT_BLUE    = vec4(116.0/255.0, 133.0/255.0, 156.0/255.0, 1.0);
+    const vec4 LIGHT_YELLOW  = vec4(222.0/255.0, 139.0/255.0, 115.0/255.0, 1.0);
+    const vec4 DARK_BLUE     = vec4(74.0/255.0, 85.0/255.0,  102.0/255.0, 1.0);
+    const vec4 DARK_YELLOW   = vec4(202.0/255.0, 77.0/255.0, 38.0/255.0, 1.0);
+    const vec4 PEOPLE_COLOR1 = vec4(214.0/255.0, 88.0/255.0,  36.0/255.0, 1.0);
+    const vec4 PEOPLE_COLOR2 = vec4(122.0/255.0, 197.0/255.0, 227.0/255.0, 1.0);
+
+    const vec4 PEOPLE_COLOR3 = vec4(168.0/255.0, 107.0/255.0,  93.0/255.0, 1.0);
+    const vec4 PEOPLE_COLOR4 = vec4(98.0/255.0, 178.0/255.0, 213.0/255.0, 1.0);
 
     vec4 replaceColor(vec4 color, vec4 matchColor, vec4 replacementColor) {
       vec4 colorDiff = abs(matchColor - color);
@@ -125,7 +130,11 @@
 
     void main() {
       vec4 color = texture2D(u_image, v_texCoord);
-      float isReplaceablePixel = isBetween(v_texCoord.t, 0.215, 0.671);
+      float isReplaceablePixel = isBetween(v_texCoord.t, 0.215, 0.66);
+
+      color = replaceColor(color, (isReplaceablePixel * shouldColor * PEOPLE_COLOR1), PEOPLE_COLOR2);
+      color = replaceColor(color, (isReplaceablePixel * shouldColor * PEOPLE_COLOR3), PEOPLE_COLOR4);
+
       color = replaceColor(color, (isReplaceablePixel * shouldColor * LIGHT_BLUE), LIGHT_YELLOW);
       color = replaceColor(color, (isReplaceablePixel * shouldColor * DARK_BLUE), DARK_YELLOW);
       gl_FragColor = color;
