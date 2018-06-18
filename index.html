@@ -47,7 +47,7 @@
       top: 0px;
       left: 0;
       right: 0;
-      height: 18px;
+      height: 22px;
       color: white;
     }
     .header-time {
@@ -79,7 +79,7 @@
 </head>
 <body>
   <video autoplay class="screenSource" id="elScreenSource" loop muted playsinline>
-    <source src="screen-iphone.mp4" />
+    <source src="screen-iphone3.mp4" />
   </video>
   <canvas class="screenBack" id="elScreenBack"></canvas>
   <canvas class="screen" id="elScreen"></canvas>
@@ -159,8 +159,10 @@
 
       const PIXEL_MULTIPLIER = 1;
       const COLOR_REPLACEMENTS = [
-        [/* light blue */ [0, 84, 167], [228, 148, 37]],
-        [/* dark blue */  [9, 46,  82], [187, 117, 42]]
+        [/* light blue */ [119, 134, 158], [221, 138, 115]],
+        [/* dark blue */  [ 89,  95, 116], [202,  76,  36]],
+        [/* person 1 */   [207,  90,  46], [121, 198, 228]],
+        [/* person 2 */   [163, 103,  94], [ 96, 176, 214]],
       ];
       const elScreenSource = window.elScreenSource;
       const elScreen = window.elScreen;
@@ -176,7 +178,7 @@
       const COLOR_REPLACEMENT_START_Y = ((((width * 180)  / PIXEL_MULTIPLIER) | 0) << 2);
       const COLOR_REPLACEMENT_END_Y = ((((width * 476)  / PIXEL_MULTIPLIER) | 0) << 2);;
 
-      const isEqual = (a, b) => Math.abs(a - b) < 40;
+      const isEqual = (a, b) => Math.abs(a - b) < 30;
       const isColor = (r, g, b, targetR, targetG, targetB) =>
         isEqual(r, targetR) && isEqual(g, targetG) && isEqual(b, targetB);
 
