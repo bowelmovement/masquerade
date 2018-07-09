@@ -142,7 +142,7 @@
   </script>
 
   <video autoplay id="elScreenSource" loop muted playsinline>
-    <source src="screen-android.mp4" />
+    <source src="screen-android-muted.mp4" />
   </video>
   <canvas id="elScreen"></canvas>
   <div class="devicebar u-bluebg"></div>
@@ -208,7 +208,10 @@
 
       /* setup screen */ (() => {
         let shouldColor = false;
-        document.body.addEventListener('touchend', () => shouldColor = !shouldColor);
+        document.body.addEventListener('touchend', () => {
+          window.elScreenSource.play(); // Hack around changed Chrome policy
+          shouldColor = !shouldColor;
+        });
 
         const compileShader = (ctx, shaderSource, shaderType) => {
           const shader = ctx.createShader(shaderType);

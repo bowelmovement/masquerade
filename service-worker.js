@@ -1,4 +1,4 @@
-const CACHE_VERSION = 18;
+const CACHE_VERSION = 20;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './android.html',
