@@ -1,4 +1,4 @@
-const CACHE_VERSION = 39;
+const CACHE_VERSION = 40;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './manifest.json',
