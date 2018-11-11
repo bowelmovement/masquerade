@@ -13,7 +13,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "masquerade/android.html",
+  "start_url": "android.html",
   "display": "fullscreen",
   "orientation": "portrait"
 }
