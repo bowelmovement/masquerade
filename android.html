@@ -11,8 +11,8 @@
   <style>
     html, body {
       font-family: sans-serif;
-      width: 411px;
-      height: 731px;
+      width: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
       position: relative;
@@ -26,8 +26,8 @@
     }
     #elScreen, #elScreenSource {
       touch-action: none;
-      width: 411px;
-      height: 731px;
+      width: 100%;
+      height: 100%;
       position: absolute;
       top: 0;
       left: 0;
@@ -37,7 +37,7 @@
     }
     .header {
       position: absolute;
-      top: 80px;
+      top: 96px;
       left: 0;
       right: 0;
       height: 50px;
@@ -48,16 +48,23 @@
       top: 0px;
       left: 0;
       right: 0;
-      height: 25px;
+      height: 40px;
       color: white;
     }
     .record-button-blocker {
       position: absolute;
       top: 30px;
       right: 0;
-      width: 30px;
-      height: 40px;
-      color: white;
+      width: 60px;
+      height: 60px;
+    }
+    .bottom-blocker {
+      position: absolute;
+      bottom: 0px;
+      right: 0;
+      width: 160px;
+      height: 44px;
+      background-color: black;
     }
     .header-time {
       text-align: center;
@@ -72,14 +79,14 @@
     .code {
       font-size: 26px;
       position: absolute;
-      bottom: 131px;
-      right: 17px;
+      bottom: 115px;
+      right: 14px;
       background: #0d7cac;
       color: white;
       border-radius: 4px;
       outline: none;
       border: none;
-      width: 58px;
+      width: 53px;
       text-align: center;
       text-transform: capitalize;
     }
@@ -142,11 +149,12 @@
   </script>
 
   <video autoplay id="elScreenSource" loop muted playsinline>
-    <source src="screen-android-muted.mp4" />
+    <source src="screen-android.mp4" />
   </video>
   <canvas id="elScreen"></canvas>
   <div class="devicebar u-bluebg"></div>
   <div class="record-button-blocker u-bluebg"></div>
+  <div class="bottom-blocker"></div>
   <div class="header u-bluebg">
     <div class="header-time" id="elTime"></div>
   </div>
@@ -210,6 +218,7 @@
         let shouldColor = false;
         document.body.addEventListener('touchend', () => {
           window.elScreenSource.play(); // Hack around changed Chrome policy
+          document.body.requestFullscreen();
           shouldColor = !shouldColor;
         });
 

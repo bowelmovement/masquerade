@@ -1,4 +1,4 @@
-const CACHE_VERSION = 20;
+const CACHE_VERSION = 29;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './android.html',
@@ -28,32 +28,9 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  const { request, request: { headers, url } } = event;
-  console.log('Handling fetch event for', url);
-
-  const range = headers.get('range');
-  if (range) {
-    const pos = Number(/^bytes\=(\d+)\-$/g.exec(range)[1]);
-    console.log(`Range request for ${url}, starting position: ${pos}`);
-
-    event.respondWith((async () => {
-      const cache = await caches.open(CURRENT_CACHES.prefetch);
-      const ab = await ((await cache.match(url)) || (await fetch(request))).arrayBuffer();
-      return new Response(
-        ab.slice(pos),
-        {
-          status: 206,
-          statusText: 'Partial Content',
-          headers: [
-            ['Content-Range', `bytes ${pos}-${ab.byteLength - 1}/${ab.byteLength}`]
-          ]
-        }
-      );
-    })());
-  } else {
-    console.log('Non-range request for', url);
-    event.respondWith((async () =>
-      (await caches.match(request)) || (await fetch(request))
-    )());
-  }
+  const { request } = event;
+  console.log('Handling fetch event for', request.url);
+  event.respondWith((async () =>
+    (await caches.match(request)) || (await fetch(request))
+  )());
 });
