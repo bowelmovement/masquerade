@@ -4,10 +4,8 @@
   <title>Masquerade</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta content="yes" name="apple-mobile-web-app-capable" />
-  <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style" />
-  <link rel="apple-touch-icon" href="images/AppIcon60x60.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="images/AppIcon60x60-2x.png" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json">
   <style>
     html, body {
       font-family: sans-serif;
@@ -215,7 +213,6 @@
         let shouldColor = false;
         document.body.addEventListener('touchend', () => {
           window.elScreenSource.play(); // Hack around changed Chrome policy
-          document.body.requestFullscreen();
           shouldColor = !shouldColor;
         });
 
