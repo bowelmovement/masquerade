@@ -204,6 +204,7 @@
       }
 
       const draw = () => {
+        elScreenSource.play();
         if (toggleColor) context.putImageData(getPixels(), 0, 0);
         else context.drawImage(elScreenSource, 0, 0, width, height);
         requestAnimationFrame(draw);
