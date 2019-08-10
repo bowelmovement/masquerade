@@ -1,4 +1,4 @@
-const CACHE_VERSION = 15;
+const CACHE_VERSION = 16;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './index.html',
@@ -49,7 +49,7 @@ self.addEventListener('fetch', event => {
           statusText: 'Partial Content',
           headers: [
             ['Content-Type', 'video/mp4'],
-            ['Content-Length', `${(posEnd - pos + 1)}`],
+            ['Content-Length', `${(posEnd - pos)}`],
             ['Content-Range', `bytes ${pos}-${posEnd}/${ab.byteLength}`],
             ['Accept-Ranges', 'bytes']
           ]
