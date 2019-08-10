@@ -89,7 +89,6 @@
       4:12:08PM 02/10/18
     </div>
   </div>
-  <input class="code" id="elCode" value="g2" />
 
   <script>
   // Helper function which returns a promise which resolves once the service worker registration
@@ -124,14 +123,6 @@
 
     /* prevent over scroll */ (() => {
       document.body.addEventListener('touchmove', e => e.preventDefault());
-    })();
-
-    /* setup code */ (() => {
-      const CODE_STORAGE_KEY = 'masquerade-code';
-      elCode.value = localStorage.getItem(CODE_STORAGE_KEY) || 'h2';
-      elCode.addEventListener('blur', () => {
-        localStorage.setItem(CODE_STORAGE_KEY, elCode.value);
-      })
     })();
 
     /* setup time */ (() => {
