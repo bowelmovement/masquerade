@@ -1,4 +1,4 @@
-const CACHE_VERSION = 40;
+const CACHE_VERSION = 46;
 const CURRENT_CACHES = { prefetch: `prefetch-cache-v${CACHE_VERSION}` };
 const URLS_TO_PREFETCH = [
   './manifest.json',
@@ -35,24 +35,20 @@ self.addEventListener('fetch', event => {
 
   const range = headers.get('range');
   if (range) {
-    const pos = Number(/^bytes\=(\d+)\-$/g.exec(range)[1]);
+    let [_, pos] = /^bytes\=(\d+)\-/g.exec(range) || [null, '0'];
+    pos = +pos;
     console.log(`Range request for ${url}, starting position: ${pos}`);
 
     event.respondWith((async () => {
       const cache = await caches.open(CURRENT_CACHES.prefetch);
-      const cachedResponse = await cache.match(url);
-      if (!cachedResponse) {
-        console.log('!!!Cache Miss!!!');
-      }
-      const ab = await (cachedResponse || (await fetch(request))).arrayBuffer();
-      console.log(`Range respond with ${ab.slice(pos).byteLength} bytes`);
+      const ab = await ((await cache.match(url)) || (await fetch(request))).arrayBuffer();
       return new Response(
         ab.slice(pos),
         {
           status: 206,
           statusText: 'Partial Content',
           headers: [
-            ['Content-Range', `bytes ${pos}-${ab.byteLength - 1}/${ab.byteLength}`]
+            ['Content-Range', `bytes ${pos}-${ab.byteLength-1}/${ab.byteLength}`]//,
           ]
         }
       );
